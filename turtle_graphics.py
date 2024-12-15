@@ -4,6 +4,9 @@ Sample:
 set x 100
 set y 150
 penup
+left 90
+forward 50
+right 165
 pendown
 repeat 12 [
     forward x
@@ -191,11 +194,11 @@ class Turtle:
         self.update_draw()
 
     def right(self, angle_deg):
-        self.direction += Decimal(np.deg2rad(float(angle_deg)))
+        self.direction -= Decimal(np.deg2rad(float(angle_deg)))
         self.update_draw()
 
     def left(self, angle_deg):
-        self.direction -= Decimal(np.deg2rad(float(angle_deg)))
+        self.direction += Decimal(np.deg2rad(float(angle_deg)))
         self.update_draw()
 
     def reset(self):

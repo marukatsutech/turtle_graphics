@@ -1,6 +1,9 @@
 set x 100
 set y 150
 penup
+left 90
+forward 50
+right 165
 pendown
 repeat 12 [
     forward x
