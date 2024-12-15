@@ -333,8 +333,8 @@ def execute_file(filename):
 def create_animation_control():
     frm_anim = ttk.Labelframe(root, relief="ridge", text="Animation", labelanchor="n")
     frm_anim.pack(side="left", fill=tk.Y)
-    btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
-    btn_play.pack(side="left")
+    # btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
+    # btn_play.pack(side="left")
     btn_reset = tk.Button(frm_anim, text="Reset", command=reset)
     btn_reset.pack(side="left")
 
@@ -363,7 +363,7 @@ def update_diagrams():
 def reset():
     global is_play
     is_play = False
-    cnt.reset()
+    # cnt.reset()
     my_turtle.reset()
 
 
@@ -374,13 +374,13 @@ def switch():
 
 def update(f):
     if is_play:
-        cnt.count_up()
+        # cnt.count_up()
         update_diagrams()
 
 
 """ main loop """
 if __name__ == "__main__":
-    cnt = Counter(ax=ax0, is3d=False, xy=np.array([x_min, y_max]), label="Step=")
+    # cnt = Counter(ax=ax0, is3d=False, xy=np.array([x_min, y_max]), label="Step=")
     draw_static_diagrams()
 
     create_animation_control()
