@@ -32,13 +32,8 @@ size_turtle = 5
 is_play = False
 
 """ Axis vectors """
-vector_x_axis = np.array([1., 0., 0.])
-vector_y_axis = np.array([0., 1., 0.])
-vector_z_axis = np.array([0., 0., 1.])
 
 """ Other parameters """
-theta_init_deg, phi_init_deg = 0., 0.
-rot_velocity_x, rot_velocity_y, rot_velocity_z = 1., 1., 1.
 
 """ Create figure and axes """
 title_ax0 = "Turtle graphics"
