@@ -240,9 +240,11 @@ def reset():
 
 
 def execute_file(filename):
-    global commands, expanded_commands, is_run
+    global commands, expanded_commands, is_run, command_counter
     commands = read_commands_from_file(filename)
     expanded_commands = expand_commands(commands)
+    command_counter = 0
+    cnt.reset()
     is_run = True
 
 
