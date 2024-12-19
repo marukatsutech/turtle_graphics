@@ -1,0 +1,9 @@
+set distance 25
+set angle 45
+repeat 8 [
+    pendown
+    forward distance
+    penup
+    forward 10
+    right angle
+]
