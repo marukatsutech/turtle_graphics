@@ -1,0 +1,9 @@
+penup
+left 90
+forward 50
+right 165
+pendown
+repeat 12 [
+    forward 100
+    right 150
+]

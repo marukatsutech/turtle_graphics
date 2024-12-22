@@ -1,0 +1,7 @@
+repeat 18 [
+    repeat 45 [
+        forward 4
+        right 8
+    ]
+    right 20
+]
