@@ -262,7 +262,7 @@ class Turtle3d:
         self.z_path = []
 
         self.update_draw()
-        self.penup()
+        self.pendown()
 
     def update_draw(self):
         self.body_vertices = [[self.pitch_axis * -10. + self.xyz,
@@ -434,6 +434,8 @@ def read_commands_from_file(filename):
         stack = []
         for line in lines:
             line = line.strip()
+            if not line:  # Ignore blank lines
+                continue
             if line.startswith("repeat"):
                 cmd, count, sub_commands = parse_command_line(line)
                 stack.append((commands, count))
@@ -532,6 +534,9 @@ def update(frame):
         elif command == "roll_ccw":
             turtle.roll_ccw(command_data[1])
             # print("roll_ccw", command_data[1])
+        elif command == "reset":
+            turtle.reset()
+            print("reset")
 
         command_counter += 1
         cnt.count_up()
