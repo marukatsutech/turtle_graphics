@@ -130,6 +130,7 @@ class Turtle:
         self.path, = self.ax.plot(np.array(self.x_path, dtype=np.float64), np.array(self.y_path, dtype=np.float64))
 
         self.is_pen_down = False
+        self.pendown()
 
     def points_polygon(self, num_sides, radius, xy, direction):
         theta = np.linspace(0, 2 * np.pi, num_sides + 1, dtype=np.float64)
@@ -164,14 +165,45 @@ class Turtle:
         self.path.set_data(np.array(self.x_path, dtype=np.float64), np.array(self.y_path, dtype=np.float64))
 
     def pendown(self):
+        print("pendown")
         self.is_pen_down = True
         self.x_path.append(self.xy[0])
         self.y_path.append(self.xy[1])
 
+        self.body.set_facecolor(self.color)
+        self.body.set_edgecolor(self.color)
+        self.head.set_facecolor(self.color)
+        self.head.set_edgecolor(self.color)
+        self.arm_right.set_facecolor(self.color)
+        self.arm_right.set_edgecolor(self.color)
+        self.arm_left.set_facecolor(self.color)
+        self.arm_left.set_edgecolor(self.color)
+        self.leg_right.set_facecolor(self.color)
+        self.leg_right.set_edgecolor(self.color)
+        self.leg_left.set_facecolor(self.color)
+        self.leg_left.set_edgecolor(self.color)
+        self.update_draw()
+
     def penup(self):
+        print("penup")
         self.is_pen_down = False
 
+        self.body.set_facecolor("gray")
+        self.body.set_edgecolor("gray")
+        self.head.set_facecolor("gray")
+        self.head.set_edgecolor("gray")
+        self.arm_right.set_facecolor("gray")
+        self.arm_right.set_edgecolor("gray")
+        self.arm_left.set_facecolor("gray")
+        self.arm_left.set_edgecolor("gray")
+        self.leg_right.set_facecolor("gray")
+        self.leg_right.set_edgecolor("gray")
+        self.leg_left.set_facecolor("gray")
+        self.leg_left.set_edgecolor("gray")
+        self.update_draw()
+
     def forward(self, distance):
+        print(f"forward {distance}")
         self.xy += float(distance) * np.array([np.cos(float(self.direction)), np.sin(float(self.direction))], dtype=np.float64)
 
         if self.is_pen_down:
@@ -268,6 +300,44 @@ def create_file_name_setter():
     ent_fn.pack(side='left')
     btn_run = tk.Button(frm_fn, text="Run", command=lambda: execute_file(ent_fn.get()))
     btn_run.pack(side='left')
+
+
+def create_manual_control():
+    frm_man = ttk.Labelframe(root, relief="ridge", text="Manual control", labelanchor="n")
+    frm_man.pack(side='left')
+
+    btn_pu = tk.Button(frm_man, text="penup", command=lambda: turtle.penup())
+    btn_pu.pack(side='left')
+
+    btn_pd = tk.Button(frm_man, text="pendown", command=lambda: turtle.pendown())
+    btn_pd.pack(side='left')
+
+    var_fd = tk.StringVar(root)
+    var_fd.set(str(1))
+    btn_fd = tk.Button(frm_man, text="forward", command=lambda: turtle.forward(float(var_fd.get())))
+    btn_fd.pack(side='left')
+    spn_fd = tk.Spinbox(
+        frm_man, textvariable=var_fd, format="%.0f", from_=1, to=100, increment=1, width=4
+    )
+    spn_fd.pack(side="left")
+
+    var_rt = tk.StringVar(root)
+    var_rt.set(str(1))
+    btn_rt = tk.Button(frm_man, text="right", command=lambda: turtle.right(float(var_rt.get())))
+    btn_rt.pack(side='left')
+    spn_rt = tk.Spinbox(
+        frm_man, textvariable=var_rt, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_rt.pack(side="left")
+
+    var_lt = tk.StringVar(root)
+    var_lt.set(str(1))
+    btn_lt = tk.Button(frm_man, text="left", command=lambda: turtle.left(float(var_lt.get())))
+    btn_lt.pack(side='left')
+    spn_lt = tk.Spinbox(
+        frm_man, textvariable=var_lt, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_lt.pack(side="left")
 
 
 def parse_command_line(line):
@@ -374,19 +444,19 @@ def update(frame):
 
         if command == "forward":
             turtle.forward_step(command_data[1])
-            print("forward", command_data[1])
+            # print("forward", command_data[1])
         elif command == "right":
             turtle.right(command_data[1])
-            print("right", command_data[1])
+            # print("right", command_data[1])
         elif command == "left":
             turtle.left(command_data[1])
-            print("left", command_data[1])
+            # print("left", command_data[1])
         elif command == "penup":
             turtle.penup()
-            print("penup")
+            # print("penup")
         elif command == "pendown":
             turtle.pendown()
-            print("pendown")
+            # print("pendown")
         elif command == "set":
             var_name, value = command_data[1], command_data[2]
             variables[var_name] = value
@@ -401,11 +471,13 @@ if __name__ == "__main__":
     cnt = Counter(ax=ax0, is3d=False, xy=np.array([x_min, y_max]), label="Step=")
     create_animation_control()
     create_file_name_setter()
+    create_manual_control()
 
     # commands = read_commands_from_file('commands.txt')
     # expanded_commands = expand_commands(commands)
 
     turtle = Turtle(ax=ax0, xy=np.array([0, 0]), direction=0, size=size_turtle, color="green")
+    turtle.pendown()
 
     anim = animation.FuncAnimation(fig, update, interval=100, save_count=100)
     root.mainloop()
