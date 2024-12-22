@@ -184,8 +184,9 @@ class Turtle:
         self.update_draw()
 
     def forward_step(self, distance):
+        print(f"forward {distance}")
         d = 0
-        step = 1
+        step = 0.2
         while d + step <= distance:
             self.xy += float(step) * np.array([np.cos(float(self.direction)), np.sin(float(self.direction))],
                                               dtype=np.float64)
@@ -215,10 +216,12 @@ class Turtle:
             self.update_draw()
 
     def right(self, angle_deg):
+        print(f"right {angle_deg}")
         self.direction -= Decimal(np.deg2rad(float(angle_deg)))
         self.update_draw()
 
     def left(self, angle_deg):
+        print(f"left {angle_deg}")
         self.direction += Decimal(np.deg2rad(float(angle_deg)))
         self.update_draw()
 
@@ -240,19 +243,20 @@ def reset():
 
 
 def execute_file(filename):
-    global commands, expanded_commands, is_run, command_counter
+    global commands, expanded_commands, is_run, is_play, command_counter
     commands = read_commands_from_file(filename)
     expanded_commands = expand_commands(commands)
     command_counter = 0
     cnt.reset()
+    is_play = True
     is_run = True
 
 
 def create_animation_control():
     frm_anim = ttk.Labelframe(root, relief="ridge", text="Animation", labelanchor="n")
     frm_anim.pack(side="left", fill=tk.Y)
-    # btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
-    # btn_play.pack(side="left")
+    btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
+    btn_play.pack(side="left")
     btn_reset = tk.Button(frm_anim, text="Reset", command=reset)
     btn_reset.pack(side="left")
 
@@ -352,8 +356,15 @@ def replace_variables(command):
     return command
 
 
+def switch():
+    global is_play
+    is_play = not is_play
+
+
 def update(frame):
     global command_counter, expanded_commands, variables, commands
+    if not is_play:
+        return
     if not is_run:
         return
     if command_counter < len(expanded_commands):
