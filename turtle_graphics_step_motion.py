@@ -375,6 +375,8 @@ def read_commands_from_file(filename):
         stack = []
         for line in lines:
             line = line.strip()
+            if not line:  # Ignore blank lines
+                continue
             if line.startswith("repeat"):
                 cmd, count, sub_commands = parse_command_line(line)
                 stack.append((commands, count))
@@ -461,6 +463,9 @@ def update(frame):
             var_name, value = command_data[1], command_data[2]
             variables[var_name] = value
             print(f"set {var_name} = {value}")
+        elif command == "reset":
+            turtle.reset()
+            print("reset")
 
         command_counter += 1
         cnt.count_up()
