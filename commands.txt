@@ -1,11 +1,41 @@
-set x 100
-set y 150
+penup
+left 90
+forward 50
+right 90
+pendown
+repeat 45 [
+    forward 8
+    right 8
+]
+
+reset
+
+repeat 18 [
+    repeat 4 [
+        forward 50
+        right 90
+    ]
+    right 20
+]
+
+reset
+
 penup
 left 90
 forward 50
 right 165
 pendown
 repeat 12 [
-    forward x
-    right y
+    forward 100
+    right 150
+]
+
+reset
+
+repeat 18 [
+    repeat 45 [
+        forward 4
+        right 8
+    ]
+    right 20
 ]
