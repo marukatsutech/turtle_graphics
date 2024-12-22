@@ -216,6 +216,8 @@ class TurtleInterpreter:
                 repeat_count = 0
                 for line in lines:
                     line = line.strip()
+                    if not line:  # Ignore blank lines
+                        continue
                     if line:
                         if line.startswith("repeat"):
                             tokens = self.tokenize(line)
