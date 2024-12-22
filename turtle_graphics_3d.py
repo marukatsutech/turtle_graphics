@@ -137,15 +137,25 @@ class Turtle3d:
         self.is_pen_down = False
 
     def pendown(self):
+        print("pendown")
         self.is_pen_down = True
+
         self.x_path.append(self.xyz[0])
         self.y_path.append(self.xyz[1])
         self.z_path.append(self.xyz[2])
 
+        self.body.set_facecolor(self.color)
+        self.body.set_edgecolor(self.color)
+
     def penup(self):
+        print("penup")
         self.is_pen_down = False
 
+        self.body.set_facecolor("gray")
+        self.body.set_edgecolor("gray")
+
     def forward(self, distance):
+        print(f"forward {distance}")
         normalized_vector = self.roll_axis / np.linalg.norm(self.roll_axis)
         self.xyz = self.xyz + normalized_vector * float(distance)
 
@@ -161,8 +171,9 @@ class Turtle3d:
         self.update_draw()
 
     def forward_step(self, distance):
+        print(f"forward {distance}")
         d = 0
-        step = 1
+        step = 0.2
         while d + step <= distance:
             normalized_vector = self.roll_axis / np.linalg.norm(self.roll_axis)
             self.xyz = self.xyz + normalized_vector * float(step)
@@ -196,21 +207,27 @@ class Turtle3d:
             self.update_draw()
 
     def right(self, angle):
+        print(f"right {angle}")
         self.yaw(- angle)
 
     def left(self, angle):
+        print(f"left {angle}")
         self.yaw(angle)
 
     def up(self, angle):
+        print(f"up {angle}")
         self.pitch(- angle)
 
     def down(self, angle):
+        print(f"down {angle}")
         self.pitch(angle)
 
     def roll_cw(self, angle):
+        print(f"roll_cw {angle}")
         self.roll(angle)
 
     def roll_ccw(self, angle):
+        print(f"roll_ccw {angle}")
         self.roll(- angle)
 
     def roll(self, angle):
@@ -245,6 +262,7 @@ class Turtle3d:
         self.z_path = []
 
         self.update_draw()
+        self.penup()
 
     def update_draw(self):
         self.body_vertices = [[self.pitch_axis * -10. + self.xyz,
@@ -272,7 +290,7 @@ def draw_static_diagrams():
 
 def reset():
     global is_play, is_run, command_counter
-    # is_play = False
+    is_play = False
     is_run = False
     command_counter = 0
     cnt.reset()
@@ -280,19 +298,20 @@ def reset():
 
 
 def execute_file(filename):
-    global commands, expanded_commands, is_run, command_counter
+    global commands, expanded_commands, is_run, is_play, command_counter
     commands = read_commands_from_file(filename)
     expanded_commands = expand_commands(commands)
     command_counter = 0
     cnt.reset()
     is_run = True
+    is_play = True
 
 
 def create_animation_control():
     frm_anim = ttk.Labelframe(root, relief="ridge", text="Animation", labelanchor="n")
     frm_anim.pack(side="left", fill=tk.Y)
-    # btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
-    # btn_play.pack(side="left")
+    btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
+    btn_play.pack(side="left")
     btn_reset = tk.Button(frm_anim, text="Reset", command=reset)
     btn_reset.pack(side="left")
 
@@ -304,6 +323,80 @@ def create_file_name_setter():
     ent_fn.pack(side='left')
     btn_run = tk.Button(frm_fn, text="Run", command=lambda: execute_file(ent_fn.get()))
     btn_run.pack(side='left')
+
+
+def create_manual_control():
+    frm_man = ttk.Labelframe(root, relief="ridge", text="Manual control", labelanchor="n")
+    frm_man.pack(side='left')
+
+    btn_pu = tk.Button(frm_man, text="penup", command=lambda: turtle.penup())
+    btn_pu.pack(side='left')
+
+    btn_pd = tk.Button(frm_man, text="pendown", command=lambda: turtle.pendown())
+    btn_pd.pack(side='left')
+
+    var_fd = tk.StringVar(root)
+    var_fd.set(str(1))
+    btn_fd = tk.Button(frm_man, text="forward", command=lambda: turtle.forward(float(var_fd.get())))
+    btn_fd.pack(side='left')
+    spn_fd = tk.Spinbox(
+        frm_man, textvariable=var_fd, format="%.0f", from_=1, to=100, increment=1, width=4
+    )
+    spn_fd.pack(side="left")
+
+    var_rt = tk.StringVar(root)
+    var_rt.set(str(1))
+    btn_rt = tk.Button(frm_man, text="right", command=lambda: turtle.right(float(var_rt.get())))
+    btn_rt.pack(side='left')
+    spn_rt = tk.Spinbox(
+        frm_man, textvariable=var_rt, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_rt.pack(side="left")
+
+    var_lt = tk.StringVar(root)
+    var_lt.set(str(1))
+    btn_lt = tk.Button(frm_man, text="left", command=lambda: turtle.left(float(var_lt.get())))
+    btn_lt.pack(side='left')
+    spn_lt = tk.Spinbox(
+        frm_man, textvariable=var_lt, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_lt.pack(side="left")
+
+    var_up = tk.StringVar(root)
+    var_up.set(str(1))
+    btn_up = tk.Button(frm_man, text="up", command=lambda: turtle.up(float(var_up.get())))
+    btn_up.pack(side='left')
+    spn_up = tk.Spinbox(
+        frm_man, textvariable=var_up, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_up.pack(side="left")
+
+    var_dn = tk.StringVar(root)
+    var_dn.set(str(1))
+    btn_dn = tk.Button(frm_man, text="down", command=lambda: turtle.down(float(var_dn.get())))
+    btn_dn.pack(side='left')
+    spn_dn = tk.Spinbox(
+        frm_man, textvariable=var_dn, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_dn.pack(side="left")
+
+    var_cw = tk.StringVar(root)
+    var_cw.set(str(1))
+    btn_cw = tk.Button(frm_man, text="roll_cw", command=lambda: turtle.roll_cw(float(var_cw.get())))
+    btn_cw.pack(side='left')
+    spn_cw = tk.Spinbox(
+        frm_man, textvariable=var_cw, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_cw.pack(side="left")
+
+    var_ccw = tk.StringVar(root)
+    var_ccw.set(str(1))
+    btn_ccw = tk.Button(frm_man, text="roll_ccw", command=lambda: turtle.roll_ccw(float(var_ccw.get())))
+    btn_ccw.pack(side='left')
+    spn_ccw = tk.Spinbox(
+        frm_man, textvariable=var_ccw, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_ccw.pack(side="left")
 
 
 def parse_command_line(line):
@@ -392,8 +485,15 @@ def replace_variables(command):
     return command
 
 
+def switch():
+    global is_play
+    is_play = not is_play
+
+
 def update(frame):
     global command_counter, expanded_commands, variables, commands
+    if not is_play:
+        return
     if not is_run:
         return
     if command_counter < len(expanded_commands):
@@ -403,35 +503,35 @@ def update(frame):
 
         if command == "forward":
             turtle.forward_step(command_data[1])
-            print("forward", command_data[1])
+            # print("forward", command_data[1])
         elif command == "right":
             turtle.right(command_data[1])
-            print("right", command_data[1])
+            # print("right", command_data[1])
         elif command == "left":
             turtle.left(command_data[1])
-            print("left", command_data[1])
+            # print("left", command_data[1])
         elif command == "penup":
             turtle.penup()
-            print("penup")
+            # print("penup")
         elif command == "pendown":
             turtle.pendown()
-            print("pendown")
+            # print("pendown")
         elif command == "set":
             var_name, value = command_data[1], command_data[2]
             variables[var_name] = value
             print(f"set {var_name} = {value}")
         elif command == "up":
             turtle.up(command_data[1])
-            print("up", command_data[1])
+            # print("up", command_data[1])
         elif command == "down":
             turtle.down(command_data[1])
-            print("up", command_data[1])
+            # print("up", command_data[1])
         elif command == "roll_cw":
             turtle.roll_cw(command_data[1])
-            print("roll_cw", command_data[1])
+            # print("roll_cw", command_data[1])
         elif command == "roll_ccw":
             turtle.roll_ccw(command_data[1])
-            print("roll_ccw", command_data[1])
+            # print("roll_ccw", command_data[1])
 
         command_counter += 1
         cnt.count_up()
@@ -439,9 +539,10 @@ def update(frame):
 
 """ main loop """
 if __name__ == "__main__":
-    cnt = Counter(ax=ax0, is3d=True, xy=np.array([x_min, y_max]),z=z_max, label="Step=")
+    cnt = Counter(ax=ax0, is3d=True, xy=np.array([x_min, y_max]), z=z_max, label="Step=")
     create_animation_control()
     create_file_name_setter()
+    create_manual_control()
     draw_static_diagrams()
 
     # commands = read_commands_from_file('commands.txt')
