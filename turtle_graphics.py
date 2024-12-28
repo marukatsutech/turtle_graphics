@@ -204,134 +204,184 @@ class Turtle:
         self.update_draw()
 
 
-class TurtleInterpreter:
+class Interpreter:
     def __init__(self):
-        self.variables = {}
+        self.variables = {}  # Global variables
+        self.commands = []   # Commands
+        self.pc = 0          # Program counter
+        self.context_stack = []  # State management stack for repeat blocks
 
-    def execute_file(self, filename):
-        try:
-            with open(filename, 'r') as file:
-                lines = file.readlines()
-                block = None
-                repeat_count = 0
-                for line in lines:
-                    line = line.strip()
-                    if not line:  # Ignore blank lines
-                        continue
-                    if line:
-                        if line.startswith("repeat"):
-                            tokens = self.tokenize(line)
-                            repeat_count = int(tokens[1])
-                            block = []
-                        elif line == "[":
-                            # No action needed, start collecting block
-                            pass
-                        elif line == "]":
-                            if block is not None:
-                                self.execute(("repeat", [repeat_count]), block=block)
-                                block = None
-                        elif block is not None:
-                            block.append(line)
-                        else:
-                            tokens = self.tokenize(line)
-                            parsed = self.parse(tokens)
-                            self.execute(parsed)
-        except FileNotFoundError:
-            print(f"Error: File '{filename}' not found.")
-        except Exception as e:
-            print(f"Error while processing file: {e}")
+    def set_variable(self, name, value):
+        self.variables[name] = int(value)
+        print(f"Set variable {name} = {value}")
 
-    def tokenize(self, command):
-        return command.split()
+    def get_variable(self, name):
+        if name not in self.variables:
+            raise NameError(f"Variable '{name}' is not defined")
+        return self.variables[name]
 
-    def parse(self, tokens):
-        if not tokens:
-            return None
-        cmd = tokens[0]
-        args = tokens[1:]
-        return cmd, args
-
-    def resolve_variable(self, value):
-        try:
-            if value in self.variables:
-                return self.variables[value]
-            return float(value)
-        except ValueError:
-            raise ValueError(f"Invalid value: {value}")
-
-    def execute(self, parsed, block=None):
-        if parsed is None:
-            return
-
-        cmd, args = parsed
-
-        if cmd == "penup":
-            my_turtle.penup()
-            print("penup")
-
-        elif cmd == "pendown":
-            my_turtle.pendown()
-            print("pendown")
-
-        elif cmd == "forward" and len(args) == 1:
-            try:
-                my_turtle.forward(self.resolve_variable(args[0]))
-                print(f"forward: {self.resolve_variable(args[0])}")
-            except ValueError:
-                print("Error: Invalid numbers")
-
-        elif cmd == "right" and len(args) == 1:
-            try:
-                my_turtle.right(self.resolve_variable(args[0]))
-                print(f"right: {self.resolve_variable(args[0])}")
-            except ValueError:
-                print("Error: Invalid numbers")
-
-        elif cmd == "left" and len(args) == 1:
-            try:
-                my_turtle.left(self.resolve_variable(args[0]))
-                print(f"left: {self.resolve_variable(args[0])}")
-            except ValueError:
-                print("Error: Invalid numbers")
-
-        elif cmd == "set" and len(args) == 2:
-            var_name = args[0]
-            value = self.resolve_variable(args[1])
-            self.variables[var_name] = value
-            print(f"'{var_name}' = {value}")
-
-        elif cmd == "print" and len(args) == 1:
-            try:
-                value = self.resolve_variable(args[0])
-                print(f"Value: {value}")
-            except KeyError:
-                print(f"Error: Variable '{args[0]}' not found")
-
-        elif cmd == "repeat" and len(args) == 1:
-            repeat_count = int(args[0])
-            for _ in range(repeat_count):
-                for sub_command in block:
-                    tokens = self.tokenize(sub_command)
-                    parsed = self.parse(tokens)
-                    self.execute(parsed)
-
-        elif cmd == "exit":
-            print("Exiting...")
-            exit()
-
+    def get_value(self, value):
+        """Determine if the input is a variable name or a literal number and return its value."""
+        if value.isdigit():
+            return int(value)  # Return the integer if it's a number
+        elif value in self.variables:
+            return self.get_variable(value)  # Return the value of the variable
         else:
-            print(f"Unknown command: {cmd}")
+            raise ValueError(f"Invalid value or undefined variable: '{value}'")
+
+    def execute_command(self, command, *args):
+        """ Execute commands """
+        if command == "set":
+            self.set_variable(args[0], args[1])
+            print(f"set {args[0]} {args[1]}")
+        elif command == "penup":
+            print(f"penup")
+            my_turtle.penup()
+        elif command == "pendown":
+            print(f"pendown")
+            my_turtle.pendown()
+        elif command == "forward":
+            steps = self.get_value(args[0])
+            print(f"forward {steps}")
+            my_turtle.forward(steps)
+        elif command == "right":
+            angle = self.get_value(args[0])
+            print(f"right {angle}")
+            my_turtle.right(angle)
+        elif command == "left":
+            angle = self.get_value(args[0])
+            print(f"left {angle}")
+            my_turtle.left(angle)
+        elif command == "add":
+            var_name = args[0]
+            increment = self.get_value(args[1])
+            self.variables[var_name] += increment
+            print(f"add {var_name} {increment}")
+        elif command == "repeat":
+            count = self.get_value(args[0])
+            block_commands = args[1]
+            self.context_stack.append({
+                "commands": block_commands,
+                "count": count,
+                "iteration": 0,
+                "index": 0
+            })
+            print(f"repeat {count}")
+        elif command == "reset":
+            print(f"reset")
+            my_turtle.reset()
+        else:
+            print(f"Unknown command: {command}")
+
+    def step(self):
+        if self.context_stack:
+            # Process the current context
+            current_context = self.context_stack[-1]
+            commands = current_context["commands"]
+            index = current_context["index"]
+            iteration = current_context["iteration"]
+            count = current_context["count"]
+
+            if index < len(commands):
+                # Execute commands in current block
+                command, *args = commands[index]
+                self.execute_command(command, *args)
+                current_context["index"] += 1
+            else:
+                # Continue repeat block
+                current_context["iteration"] += 1
+                if current_context["iteration"] < count:
+                    current_context["index"] = 0
+                    print(f"Repeat iteration {current_context['iteration']} of {count}")
+                else:
+                    # Finish repeat block
+                    self.context_stack.pop()
+                    print("End repeat block")
+        elif self.pc < len(self.commands):
+            # Execute global commands
+            command, *args = self.commands[self.pc]
+            self.pc += 1
+            self.execute_command(command, *args)
+        else:
+            print("Program finished")
+            return False  # Finish program
+        return True  # Continue program
+
+    def parse_block(self, lines, start_index):
+        """ parse repeat block """
+        commands = []
+        i = start_index
+        while i < len(lines):
+            line = lines[i].strip()
+            if line == "]":
+                return commands, i
+            parts = line.split()
+            command = parts[0]
+            if command == "repeat":
+                block_var = parts[1]
+                if parts[2] != "[":
+                    raise SyntaxError("Repeat block must start with '['")
+                nested_commands, new_index = self.parse_block(lines, i + 1)
+                commands.append((command, block_var, nested_commands))
+                i = new_index
+            else:
+                commands.append((command, *parts[1:]))
+            i += 1
+        raise SyntaxError("No closing ']' found for a repeat block")
+
+    def load_program(self, lines):
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if not line or line.startswith("#"):
+                i += 1
+                continue
+
+            parts = line.split()
+            command = parts[0]
+            if command == "repeat":
+                block_var = parts[1]
+                if parts[2] != "[":
+                    raise SyntaxError("Repeat block must start with '['")
+                block_commands, new_index = self.parse_block(lines, i + 1)
+                self.commands.append((command, block_var, block_commands))
+                i = new_index
+            else:
+                self.commands.append((command, *parts[1:]))
+            i += 1
+
+    def reset(self):
+        self.pc = 0
+        self.context_stack = []
+
+    def clear(self):
+        self.pc = 0
+        self.context_stack = []
+        self.commands = []
 
 
 def execute_file(filename):
-    interpreter.execute_file(filename)
+    global is_run, is_play
+    interpreter.clear()
+    try:
+        with open(filename) as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        pass
+        print(f"Error: File '{filename}' not found.")
+    except Exception as e:
+        print(f"Error while processing file: {e}")
+
+    interpreter.load_program(lines)
+    is_play = True
+    is_run = True
 
 
 def create_animation_control():
     frm_anim = ttk.Labelframe(root, relief="ridge", text="Animation", labelanchor="n")
     frm_anim.pack(side="left", fill=tk.Y)
-    # btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
-    # btn_play.pack(side="left")
+    btn_play = tk.Button(frm_anim, text="Play/Pause", command=switch)
+    btn_play.pack(side="left")
     btn_reset = tk.Button(frm_anim, text="Reset", command=reset)
     btn_reset.pack(side="left")
 
@@ -345,22 +395,12 @@ def create_file_name_setter():
     btn_run.pack(side='left')
 
 
-def create_parameter_setter():
-    pass
-
-
-def draw_static_diagrams():
-    pass
-
-
-def update_diagrams():
-    pass
-
-
 def reset():
-    global is_play
+    global is_play, is_run
     is_play = False
-    # cnt.reset()
+    is_run = False
+    interpreter.reset()
+    cnt.reset()
     my_turtle.reset()
 
 
@@ -370,22 +410,24 @@ def switch():
 
 
 def update(f):
-    if is_play:
-        # cnt.count_up()
-        update_diagrams()
+    global is_run
+    if not is_play:
+        return
+    if not is_run:
+        return
+    cnt.count_up()
+    if not interpreter.step():
+        is_run = False
 
 
 """ main loop """
 if __name__ == "__main__":
-    # cnt = Counter(ax=ax0, is3d=False, xy=np.array([x_min, y_max]), label="Step=")
-    draw_static_diagrams()
-
     create_animation_control()
-    create_parameter_setter()
     create_file_name_setter()
+    cnt = Counter(ax=ax0, is3d=False, xy=np.array([x_min, y_max]), label="Step=")
 
+    interpreter = Interpreter()
     my_turtle = Turtle(ax=ax0, xy=np.array([0, 0]), direction=0, size=size_turtle, color="green")
-    interpreter = TurtleInterpreter()
 
     anim = animation.FuncAnimation(fig, update, interval=100, save_count=100)
     root.mainloop()
