@@ -79,6 +79,10 @@ canvas.get_tk_widget().pack(expand=True, fill="both")
 toolbar = NavigationToolbar2Tk(canvas, root)
 canvas.get_tk_widget().pack()
 
+""" Global objects of Tkinter """
+
+""" Classes and functions """
+
 
 class Counter:
     def __init__(self, is3d=None, ax=None, xy=None, z=None, label=""):
@@ -275,36 +279,193 @@ class Turtle3d:
         self.path.set_3d_properties(np.array(self.z_path, dtype=np.float64))
 
 
-def create_center_lines():
-    line_axis_x = art3d.Line3D([0., 0.], [0., 0.], [z_min, z_max], color="gray", ls="-.", linewidth=1)
-    ax0.add_line(line_axis_x)
-    line_axis_y = art3d.Line3D([x_min, x_max], [0., 0.], [0., 0.], color="gray", ls="-.", linewidth=1)
-    ax0.add_line(line_axis_y)
-    line_axis_z = art3d.Line3D([0., 0.], [y_min, y_max], [0., 0.], color="gray", ls="-.", linewidth=1)
-    ax0.add_line(line_axis_z)
+class Interpreter:
+    def __init__(self):
+        self.variables = {}  # Global variables
+        self.commands = []   # Commands
+        self.pc = 0          # Program counter
+        self.context_stack = []  # State management stack for repeat blocks
 
+    def set_variable(self, name, value):
+        self.variables[name] = int(value)
+        print(f"Set variable {name} = {value}")
 
-def draw_static_diagrams():
-    create_center_lines()
+    def get_variable(self, name):
+        if name not in self.variables:
+            raise NameError(f"Variable '{name}' is not defined")
+        return self.variables[name]
 
+    def get_value(self, value):
+        """Determine if the input is a variable name or a literal number and return its value."""
+        if value.isdigit():
+            return int(value)  # Return the integer if it's a number
+        elif value in self.variables:
+            return self.get_variable(value)  # Return the value of the variable
+        else:
+            raise ValueError(f"Invalid value or undefined variable: '{value}'")
 
-def reset():
-    global is_play, is_run, command_counter
-    is_play = False
-    is_run = False
-    command_counter = 0
-    cnt.reset()
-    turtle.reset()
+    def execute_command(self, command, *args):
+        """ Execute commands """
+        if command == "set":
+            self.set_variable(args[0], args[1])
+            print(f"set {args[0]} {args[1]}")
+        elif command == "penup":
+            print(f"penup")
+            my_turtle.penup()
+        elif command == "pendown":
+            print(f"pendown")
+            my_turtle.pendown()
+        elif command == "forward":
+            steps = self.get_value(args[0])
+            print(f"forward {steps}")
+            my_turtle.forward_step(steps)
+        elif command == "right":
+            angle = self.get_value(args[0])
+            print(f"right {angle}")
+            my_turtle.right(angle)
+        elif command == "left":
+            angle = self.get_value(args[0])
+            print(f"left {angle}")
+            my_turtle.left(angle)
+        elif command == "up":
+            angle = self.get_value(args[0])
+            print(f"up {angle}")
+            my_turtle.up(angle)
+        elif command == "down":
+            angle = self.get_value(args[0])
+            print(f"down {angle}")
+            my_turtle.down(angle)
+        elif command == "roll_cw":
+            angle = self.get_value(args[0])
+            print(f"roll_cw {angle}")
+            my_turtle.roll_cw(angle)
+        elif command == "roll_ccw":
+            angle = self.get_value(args[0])
+            print(f"roll_ccw {angle}")
+            my_turtle.roll_ccw(angle)
+        elif command == "add":
+            var_name = args[0]
+            increment = self.get_value(args[1])
+            self.variables[var_name] += increment
+            print(f"add {var_name} {increment}")
+        elif command == "repeat":
+            count = self.get_value(args[0])
+            block_commands = args[1]
+            self.context_stack.append({
+                "commands": block_commands,
+                "count": count,
+                "iteration": 0,
+                "index": 0
+            })
+            print(f"repeat {count}")
+        elif command == "reset":
+            print(f"reset")
+            my_turtle.reset()
+        else:
+            print(f"Unknown command: {command}")
+
+    def step(self):
+        if self.context_stack:
+            # Process the current context
+            current_context = self.context_stack[-1]
+            commands = current_context["commands"]
+            index = current_context["index"]
+            iteration = current_context["iteration"]
+            count = current_context["count"]
+
+            if index < len(commands):
+                # Execute commands in current block
+                command, *args = commands[index]
+                self.execute_command(command, *args)
+                current_context["index"] += 1
+            else:
+                # Continue repeat block
+                current_context["iteration"] += 1
+                if current_context["iteration"] < count:
+                    current_context["index"] = 0
+                    print(f"Repeat iteration {current_context['iteration']} of {count}")
+                else:
+                    # Finish repeat block
+                    self.context_stack.pop()
+                    print("End repeat block")
+        elif self.pc < len(self.commands):
+            # Execute global commands
+            command, *args = self.commands[self.pc]
+            self.pc += 1
+            self.execute_command(command, *args)
+        else:
+            print("Program finished")
+            return False  # Finish program
+        return True  # Continue program
+
+    def parse_block(self, lines, start_index):
+        """ parse repeat block """
+        commands = []
+        i = start_index
+        while i < len(lines):
+            line = lines[i].strip()
+            if line == "]":
+                return commands, i
+            parts = line.split()
+            command = parts[0]
+            if command == "repeat":
+                block_var = parts[1]
+                if parts[2] != "[":
+                    raise SyntaxError("Repeat block must start with '['")
+                nested_commands, new_index = self.parse_block(lines, i + 1)
+                commands.append((command, block_var, nested_commands))
+                i = new_index
+            else:
+                commands.append((command, *parts[1:]))
+            i += 1
+        raise SyntaxError("No closing ']' found for a repeat block")
+
+    def load_program(self, lines):
+        i = 0
+        while i < len(lines):
+            line = lines[i].strip()
+            if not line or line.startswith("#"):
+                i += 1
+                continue
+
+            parts = line.split()
+            command = parts[0]
+            if command == "repeat":
+                block_var = parts[1]
+                if parts[2] != "[":
+                    raise SyntaxError("Repeat block must start with '['")
+                block_commands, new_index = self.parse_block(lines, i + 1)
+                self.commands.append((command, block_var, block_commands))
+                i = new_index
+            else:
+                self.commands.append((command, *parts[1:]))
+            i += 1
+
+    def reset(self):
+        self.pc = 0
+        self.context_stack = []
+
+    def clear(self):
+        self.pc = 0
+        self.context_stack = []
+        self.commands = []
 
 
 def execute_file(filename):
-    global commands, expanded_commands, is_run, is_play, command_counter
-    commands = read_commands_from_file(filename)
-    expanded_commands = expand_commands(commands)
-    command_counter = 0
-    cnt.reset()
-    is_run = True
+    global is_run, is_play
+    interpreter.clear()
+    try:
+        with open(filename) as f:
+            lines = f.readlines()
+    except FileNotFoundError:
+        pass
+        print(f"Error: File '{filename}' not found.")
+    except Exception as e:
+        print(f"Error while processing file: {e}")
+
+    interpreter.load_program(lines)
     is_play = True
+    is_run = True
 
 
 def create_animation_control():
@@ -329,15 +490,15 @@ def create_manual_control():
     frm_man = ttk.Labelframe(root, relief="ridge", text="Manual control", labelanchor="n")
     frm_man.pack(side='left')
 
-    btn_pu = tk.Button(frm_man, text="penup", command=lambda: turtle.penup())
+    btn_pu = tk.Button(frm_man, text="penup", command=lambda: my_turtle.penup())
     btn_pu.pack(side='left')
 
-    btn_pd = tk.Button(frm_man, text="pendown", command=lambda: turtle.pendown())
+    btn_pd = tk.Button(frm_man, text="pendown", command=lambda: my_turtle.pendown())
     btn_pd.pack(side='left')
 
     var_fd = tk.StringVar(root)
     var_fd.set(str(1))
-    btn_fd = tk.Button(frm_man, text="forward", command=lambda: turtle.forward(float(var_fd.get())))
+    btn_fd = tk.Button(frm_man, text="forward", command=lambda: my_turtle.forward(float(var_fd.get())))
     btn_fd.pack(side='left')
     spn_fd = tk.Spinbox(
         frm_man, textvariable=var_fd, format="%.0f", from_=1, to=100, increment=1, width=4
@@ -346,7 +507,7 @@ def create_manual_control():
 
     var_rt = tk.StringVar(root)
     var_rt.set(str(1))
-    btn_rt = tk.Button(frm_man, text="right", command=lambda: turtle.right(float(var_rt.get())))
+    btn_rt = tk.Button(frm_man, text="right", command=lambda: my_turtle.right(float(var_rt.get())))
     btn_rt.pack(side='left')
     spn_rt = tk.Spinbox(
         frm_man, textvariable=var_rt, format="%.0f", from_=1, to=360, increment=1, width=4
@@ -355,7 +516,7 @@ def create_manual_control():
 
     var_lt = tk.StringVar(root)
     var_lt.set(str(1))
-    btn_lt = tk.Button(frm_man, text="left", command=lambda: turtle.left(float(var_lt.get())))
+    btn_lt = tk.Button(frm_man, text="left", command=lambda: my_turtle.left(float(var_lt.get())))
     btn_lt.pack(side='left')
     spn_lt = tk.Spinbox(
         frm_man, textvariable=var_lt, format="%.0f", from_=1, to=360, increment=1, width=4
@@ -364,7 +525,7 @@ def create_manual_control():
 
     var_up = tk.StringVar(root)
     var_up.set(str(1))
-    btn_up = tk.Button(frm_man, text="up", command=lambda: turtle.up(float(var_up.get())))
+    btn_up = tk.Button(frm_man, text="up", command=lambda: my_turtle.up(float(var_up.get())))
     btn_up.pack(side='left')
     spn_up = tk.Spinbox(
         frm_man, textvariable=var_up, format="%.0f", from_=1, to=360, increment=1, width=4
@@ -373,7 +534,7 @@ def create_manual_control():
 
     var_dn = tk.StringVar(root)
     var_dn.set(str(1))
-    btn_dn = tk.Button(frm_man, text="down", command=lambda: turtle.down(float(var_dn.get())))
+    btn_dn = tk.Button(frm_man, text="down", command=lambda: my_turtle.down(float(var_dn.get())))
     btn_dn.pack(side='left')
     spn_dn = tk.Spinbox(
         frm_man, textvariable=var_dn, format="%.0f", from_=1, to=360, increment=1, width=4
@@ -382,7 +543,7 @@ def create_manual_control():
 
     var_cw = tk.StringVar(root)
     var_cw.set(str(1))
-    btn_cw = tk.Button(frm_man, text="roll_cw", command=lambda: turtle.roll_cw(float(var_cw.get())))
+    btn_cw = tk.Button(frm_man, text="roll_cw", command=lambda: my_turtle.roll_cw(float(var_cw.get())))
     btn_cw.pack(side='left')
     spn_cw = tk.Spinbox(
         frm_man, textvariable=var_cw, format="%.0f", from_=1, to=360, increment=1, width=4
@@ -391,7 +552,7 @@ def create_manual_control():
 
     var_ccw = tk.StringVar(root)
     var_ccw.set(str(1))
-    btn_ccw = tk.Button(frm_man, text="roll_ccw", command=lambda: turtle.roll_ccw(float(var_ccw.get())))
+    btn_ccw = tk.Button(frm_man, text="roll_ccw", command=lambda: my_turtle.roll_ccw(float(var_ccw.get())))
     btn_ccw.pack(side='left')
     spn_ccw = tk.Spinbox(
         frm_man, textvariable=var_ccw, format="%.0f", from_=1, to=360, increment=1, width=4
@@ -399,92 +560,13 @@ def create_manual_control():
     spn_ccw.pack(side="left")
 
 
-def parse_command_line(line):
-    tokens = line.split()
-    cmd = tokens[0].lower()
-    if cmd == "repeat":
-        count = int(tokens[1])
-        return (cmd, count, [])
-    elif cmd == "set":
-        if len(tokens) != 3:
-            raise ValueError("Invalid SET command format")
-        var_name = tokens[1]
-        value = int(tokens[2])
-        return (cmd, var_name, value)
-    else:
-        if len(tokens) > 1:
-            value = tokens[1]
-            # Treat as a number or variable name.
-            try:
-                value = int(value)
-            except ValueError:
-                value = variables.get(value, value)
-            return (cmd, value)
-        else:
-            return (cmd, )
-
-
-def read_commands_from_file(filename):
-    global commands
-    try:
-        with open(filename, 'r') as file:
-            lines = file.readlines()
-
-        commands = []
-        stack = []
-        for line in lines:
-            line = line.strip()
-            if not line:  # Ignore blank lines
-                continue
-            if line.startswith("repeat"):
-                cmd, count, sub_commands = parse_command_line(line)
-                stack.append((commands, count))
-                commands = []
-            elif line == "[":
-                pass  # Start sub commands
-            elif line == "]":
-                if stack:
-                    parent_commands, count = stack.pop()
-                    parent_commands.append(("repeat", count, commands))
-                    commands = parent_commands
-            else:
-                cmd_value = parse_command_line(line)
-                commands.append(cmd_value)
-        return commands
-    except FileNotFoundError:
-        print(f"Error: File '{filename}' not found.")
-        return []
-    except Exception as e:
-        print(f"Error while processing file: {e}")
-        return []
-
-
-def expand_commands(commands):
-    expanded = []
-    for command in commands:
-        if command[0] == "repeat":
-            count, sub_commands = command[1], command[2]
-            if count <= 0:
-                continue  # Ignore
-            for _ in range(count):
-                expanded.extend(expand_commands(sub_commands))
-        else:
-            expanded.append(command)
-    return expanded
-
-
-def replace_variables(command):
-    # Replace command value
-    if command[0] == "set":
-        return command  # Return the SET command as is."
-    if len(command) > 1:
-        cmd, value = command
-        if isinstance(value, str):
-            value = variables.get(value, value)
-            if isinstance(value, str):
-                raise ValueError(f"Undefined variable: {value}")
-        return (cmd, value)
-    return command
+def reset():
+    global is_play, is_run
+    is_play = False
+    is_run = False
+    interpreter.reset()
+    cnt.reset()
+    my_turtle.reset()
 
 
 def switch():
@@ -492,69 +574,26 @@ def switch():
     is_play = not is_play
 
 
-def update(frame):
-    global command_counter, expanded_commands, variables, commands
+def update(f):
+    global is_run
     if not is_play:
         return
     if not is_run:
         return
-    if command_counter < len(expanded_commands):
-        command_data = expanded_commands[command_counter]
-        command_data = replace_variables(command_data)
-        command = command_data[0]
-
-        if command == "forward":
-            turtle.forward_step(command_data[1])
-            # print("forward", command_data[1])
-        elif command == "right":
-            turtle.right(command_data[1])
-            # print("right", command_data[1])
-        elif command == "left":
-            turtle.left(command_data[1])
-            # print("left", command_data[1])
-        elif command == "penup":
-            turtle.penup()
-            # print("penup")
-        elif command == "pendown":
-            turtle.pendown()
-            # print("pendown")
-        elif command == "set":
-            var_name, value = command_data[1], command_data[2]
-            variables[var_name] = value
-            print(f"set {var_name} = {value}")
-        elif command == "up":
-            turtle.up(command_data[1])
-            # print("up", command_data[1])
-        elif command == "down":
-            turtle.down(command_data[1])
-            # print("up", command_data[1])
-        elif command == "roll_cw":
-            turtle.roll_cw(command_data[1])
-            # print("roll_cw", command_data[1])
-        elif command == "roll_ccw":
-            turtle.roll_ccw(command_data[1])
-            # print("roll_ccw", command_data[1])
-        elif command == "reset":
-            turtle.reset()
-            print("reset")
-
-        command_counter += 1
-        cnt.count_up()
+    cnt.count_up()
+    if not interpreter.step():
+        is_run = False
 
 
 """ main loop """
 if __name__ == "__main__":
-    cnt = Counter(ax=ax0, is3d=True, xy=np.array([x_min, y_max]), z=z_max, label="Step=")
     create_animation_control()
     create_file_name_setter()
     create_manual_control()
-    draw_static_diagrams()
+    cnt = Counter(ax=ax0, is3d=True, xy=np.array([x_min, y_max]), z=z_max, label="Step=")
 
-    # commands = read_commands_from_file('commands.txt')
-    # expanded_commands = expand_commands(commands)
+    interpreter = Interpreter()
+    my_turtle = Turtle3d(ax=ax0, xyz=np.array([0., 0., 0.]), direction=0., size=size_turtle, color="green")
 
-    turtle = Turtle3d(ax=ax0, xyz=np.array([0., 0., 0.]), direction=0., size=size_turtle, color="green")
-    turtle.pendown()
-
-    anim = animation.FuncAnimation(fig, update, interval=10, save_count=100)
+    anim = animation.FuncAnimation(fig, update, interval=100, save_count=100)
     root.mainloop()
