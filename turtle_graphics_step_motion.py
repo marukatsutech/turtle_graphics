@@ -471,6 +471,43 @@ def create_file_name_setter():
     btn_run.pack(side='left')
 
 
+def create_manual_control():
+    frm_man = ttk.Labelframe(root, relief="ridge", text="Manual control", labelanchor="n")
+    frm_man.pack(side='left')
+
+    btn_pu = tk.Button(frm_man, text="penup", command=lambda: my_turtle.penup())
+    btn_pu.pack(side='left')
+
+    btn_pd = tk.Button(frm_man, text="pendown", command=lambda: my_turtle.pendown())
+    btn_pd.pack(side='left')
+
+    var_fd = tk.StringVar(root)
+    var_fd.set(str(1))
+    btn_fd = tk.Button(frm_man, text="forward", command=lambda: my_turtle.forward(float(var_fd.get())))
+    btn_fd.pack(side='left')
+    spn_fd = tk.Spinbox(
+        frm_man, textvariable=var_fd, format="%.0f", from_=1, to=100, increment=1, width=4
+    )
+    spn_fd.pack(side="left")
+
+    var_rt = tk.StringVar(root)
+    var_rt.set(str(1))
+    btn_rt = tk.Button(frm_man, text="right", command=lambda: my_turtle.right(float(var_rt.get())))
+    btn_rt.pack(side='left')
+    spn_rt = tk.Spinbox(
+        frm_man, textvariable=var_rt, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_rt.pack(side="left")
+
+    var_lt = tk.StringVar(root)
+    var_lt.set(str(1))
+    btn_lt = tk.Button(frm_man, text="left", command=lambda: my_turtle.left(float(var_lt.get())))
+    btn_lt.pack(side='left')
+    spn_lt = tk.Spinbox(
+        frm_man, textvariable=var_lt, format="%.0f", from_=1, to=360, increment=1, width=4
+    )
+    spn_lt.pack(side="left")
+
 def reset():
     global is_play, is_run
     is_play = False
@@ -500,6 +537,7 @@ def update(f):
 if __name__ == "__main__":
     create_animation_control()
     create_file_name_setter()
+    create_manual_control()
     cnt = Counter(ax=ax0, is3d=False, xy=np.array([x_min, y_max]), label="Step=")
 
     interpreter = Interpreter()
