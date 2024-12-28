@@ -39,3 +39,34 @@ repeat 18 [
     ]
     right 20
 ]
+
+reset
+
+set times_a 50
+set length 3
+set angle 90
+set length_step 3
+pendown
+repeat times_a [
+    forward length
+    right angle
+    add length length_step
+]
+
+reset
+
+set times_a 30
+set times_b 4
+set length 10
+set angle 90
+set angle_step 20
+set length_step 3
+pendown
+repeat times_a [
+    repeat times_b [
+        forward length
+        right angle
+    ]
+    right angle_step
+    add length length_step
+]
