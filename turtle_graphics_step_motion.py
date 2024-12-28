@@ -508,6 +508,7 @@ def create_manual_control():
     )
     spn_lt.pack(side="left")
 
+
 def reset():
     global is_play, is_run
     is_play = False
