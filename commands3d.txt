@@ -1,0 +1,89 @@
+penup
+up 90
+forward 50
+right 90
+pendown
+repeat 6 [
+    repeat 45 [
+        forward 8
+        right 8
+    ]
+    up 30
+]
+
+reset
+
+penup
+pendown
+repeat 12 [
+    forward 10
+    up 90
+    repeat 12 [
+        forward 8
+        right 30
+    ]
+    down 90
+    forward 10
+    left 30
+]
+
+reset
+
+penup
+down 90
+forward 100
+up 90
+pendown
+repeat 24 [
+    repeat 4 [
+        forward 60
+        right 90
+    ]
+    right 20
+    up 90
+    forward 8
+    down 90
+]
+
+reset
+
+pendown
+repeat 12 [
+    repeat 4 [
+        forward 60
+        right 90
+    ]
+    roll_cw 30
+]
+
+reset
+
+set times_a 100
+set angle 10
+set length 4
+pendown
+repeat times_a [
+    forward length
+    up angle
+    forward length
+    right angle
+    forward length
+    roll_ccw angle
+]
+
+reset
+
+set times_a 20
+set times_b 4
+set angle 10
+set length 2
+pendown
+repeat times_a [
+    repeat times_b [
+        forward length
+        roll_ccw angle
+        up angle
+        right angle
+    ]
+    add length 2
+]
